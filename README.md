@@ -4,7 +4,7 @@ A production-grade, full-stack IT Asset Management platform engineered with a hi
 
 ---
 
-## ⚡ Quick Start for Evaluator / Tutor (Run in 3 Minutes)
+## ⚡ Quick Start 
 
 Follow these 3 simple steps to launch the entire system from scratch:
 
