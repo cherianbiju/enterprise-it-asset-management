@@ -1,0 +1,113 @@
+<div class="history-wrapper">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Lifecycle & Audit Trail</h1>
+      <p class="page-subtitle">Complete chronological history of allocations, status changes, and repairs</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/assets" class="btn btn-secondary">
+        ← Back to Inventory
+      </a>
+    </div>
+  </div>
+
+  <!-- Asset Selector Bar (When browsing /history) -->
+  <div class="card selector-card" *ngIf="assetsList.length > 0">
+    <div class="selector-row">
+      <label for="assetSelector">Select Asset to Audit:</label>
+      <select id="assetSelector" [ngModel]="assetId" (ngModelChange)="onSelectAsset($event)">
+        <option *ngFor="let item of assetsList" [ngValue]="item.id">
+          {{ item.asset_code }} — {{ item.asset_name }} ({{ item.status }})
+        </option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="errorMessage" class="alert alert-error">
+    <span>⚠️</span>
+    <div class="alert-content">{{ errorMessage }}</div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading audit timeline...</p>
+  </div>
+
+  <!-- Asset Info Header Banner -->
+  <div *ngIf="!isLoading && asset" class="card asset-banner">
+    <div class="banner-top">
+      <div>
+        <span class="banner-code">{{ asset.asset_code }}</span>
+        <h2 class="banner-name">{{ asset.asset_name }}</h2>
+      </div>
+      <span class="badge" [ngClass]="'badge-' + asset.status.toLowerCase()">
+        {{ asset.status }}
+      </span>
+    </div>
+    <div class="banner-details">
+      <div class="detail-item">
+        <span class="detail-label">Category:</span>
+        <span class="detail-value">{{ asset.asset_type }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">Serial Number:</span>
+        <span class="detail-value"><code>{{ asset.serial_number }}</code></span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">Location:</span>
+        <span class="detail-value">📍 {{ asset.location }}</span>
+      </div>
+      <div class="detail-item" *ngIf="asset.assigned_to">
+        <span class="detail-label">Assigned To:</span>
+        <span class="detail-value">👤 {{ asset.assigned_to }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">Purchased:</span>
+        <span class="detail-value">{{ asset.purchase_date }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audit Timeline Card -->
+  <div *ngIf="!isLoading && asset" class="card timeline-card">
+    <div class="card-title-bar">
+      <h3>Chronological Audit Trail</h3>
+      <span class="history-count">{{ historyList.length }} Events Recorded</span>
+    </div>
+
+    <div class="timeline-tree">
+      <div *ngFor="let log of historyList; let isLast = last" class="timeline-row">
+        <!-- Visual Marker Column -->
+        <div class="marker-column">
+          <div class="marker-bubble">
+            {{ getActionIcon(log.action) }}
+          </div>
+          <div class="marker-line" *ngIf="!isLast"></div>
+        </div>
+
+        <!-- Event Content Column -->
+        <div class="event-card">
+          <div class="event-header">
+            <div class="event-title-group">
+              <span class="badge" [ngClass]="getActionBadgeClass(log.action)">
+                {{ log.action }}
+              </span>
+              <span class="event-author">Action by: <strong>{{ log.performed_by }}</strong></span>
+            </div>
+            <span class="event-timestamp">{{ log.created_at | date:'medium' }}</span>
+          </div>
+
+          <p class="event-description">{{ log.details }}</p>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="historyList.length === 0" class="empty-state">
+        <p>No historical events logged for this asset yet.</p>
+      </div>
+    </div>
+  </div>
+</div>

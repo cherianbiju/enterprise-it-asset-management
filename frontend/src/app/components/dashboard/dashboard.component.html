@@ -1,0 +1,146 @@
+<div class="dashboard-wrapper">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Enterprise IT Asset Dashboard</h1>
+      <p class="page-subtitle">Real-time status overview of all company hardware & software assets</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/assets/new" class="btn btn-primary">
+        <span class="icon">➕</span> Add New Asset
+      </a>
+      <a routerLink="/assets" class="btn btn-secondary">
+        <span class="icon">📦</span> View Inventory
+      </a>
+    </div>
+  </div>
+
+  <!-- Error Alert Banner -->
+  <div *ngIf="errorMessage" class="alert alert-error">
+    <span class="alert-icon">⚠️</span>
+    <div class="alert-content">
+      <strong>Connection Notice:</strong> {{ errorMessage }}
+    </div>
+    <button (click)="loadStats()" class="btn btn-sm btn-retry">Retry</button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading enterprise asset statistics...</p>
+  </div>
+
+  <!-- Metrics Grid -->
+  <div *ngIf="!isLoading" class="metrics-grid">
+    <!-- Total Assets -->
+    <div class="stat-card total-card">
+      <div class="stat-header">
+        <span class="stat-title">Total Tracked Assets</span>
+        <span class="stat-badge">All Categories</span>
+      </div>
+      <div class="stat-value">{{ stats.total }}</div>
+      <div class="stat-footer">
+        <span>Across all offices and datacenters</span>
+      </div>
+    </div>
+
+    <!-- Available Assets -->
+    <div class="stat-card available-card">
+      <div class="stat-header">
+        <span class="stat-title">Available in Stock</span>
+        <span class="status-indicator available-indicator"></span>
+      </div>
+      <div class="stat-value text-available">{{ stats.available }}</div>
+      <div class="stat-progress">
+        <div class="progress-bar progress-available" [style.width.%]="getPercentage(stats.available)"></div>
+      </div>
+      <div class="stat-footer">
+        <span>{{ getPercentage(stats.available) }}% of total inventory</span>
+      </div>
+    </div>
+
+    <!-- Assigned Assets -->
+    <div class="stat-card assigned-card">
+      <div class="stat-header">
+        <span class="stat-title">Currently Assigned</span>
+        <span class="status-indicator assigned-indicator"></span>
+      </div>
+      <div class="stat-value text-assigned">{{ stats.assigned }}</div>
+      <div class="stat-progress">
+        <div class="progress-bar progress-assigned" [style.width.%]="getPercentage(stats.assigned)"></div>
+      </div>
+      <div class="stat-footer">
+        <span>{{ getPercentage(stats.assigned) }}% deployed to employees</span>
+      </div>
+    </div>
+
+    <!-- Under Repair Assets -->
+    <div class="stat-card repair-card">
+      <div class="stat-header">
+        <span class="stat-title">Under Repair / Service</span>
+        <span class="status-indicator repair-indicator"></span>
+      </div>
+      <div class="stat-value text-repair">{{ stats.under_repair }}</div>
+      <div class="stat-progress">
+        <div class="progress-bar progress-repair" [style.width.%]="getPercentage(stats.under_repair)"></div>
+      </div>
+      <div class="stat-footer">
+        <span>{{ getPercentage(stats.under_repair) }}% in maintenance</span>
+      </div>
+    </div>
+
+    <!-- Retired Assets -->
+    <div class="stat-card retired-card">
+      <div class="stat-header">
+        <span class="stat-title">Decommissioned / Retired</span>
+        <span class="status-indicator retired-indicator"></span>
+      </div>
+      <div class="stat-value text-retired">{{ stats.retired }}</div>
+      <div class="stat-progress">
+        <div class="progress-bar progress-retired" [style.width.%]="getPercentage(stats.retired)"></div>
+      </div>
+      <div class="stat-footer">
+        <span>{{ getPercentage(stats.retired) }}% end-of-life disposal</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Operational Overview Section -->
+  <div *ngIf="!isLoading" class="dashboard-sections">
+    <div class="card section-card">
+      <div class="card-title-bar">
+        <h2>System Quick Shortcuts</h2>
+      </div>
+      <div class="shortcuts-grid">
+        <a routerLink="/assets" [queryParams]="{ status: 'AVAILABLE' }" class="shortcut-box">
+          <div class="shortcut-icon">🟢</div>
+          <div class="shortcut-text">
+            <h4>Assign Available Hardware</h4>
+            <p>{{ stats.available }} assets ready for deployment</p>
+          </div>
+        </a>
+        <a routerLink="/assets" [queryParams]="{ status: 'ASSIGNED' }" class="shortcut-box">
+          <div class="shortcut-icon">🔵</div>
+          <div class="shortcut-text">
+            <h4>Check Deployed Assets</h4>
+            <p>{{ stats.assigned }} active hardware assignments</p>
+          </div>
+        </a>
+        <a routerLink="/assets" [queryParams]="{ status: 'UNDER_REPAIR' }" class="shortcut-box">
+          <div class="shortcut-icon">🟠</div>
+          <div class="shortcut-text">
+            <h4>Manage Active Repairs</h4>
+            <p>{{ stats.under_repair }} tickets requiring technician review</p>
+          </div>
+        </a>
+        <a routerLink="/history" class="shortcut-box">
+          <div class="shortcut-icon">📜</div>
+          <div class="shortcut-text">
+            <h4>Compliance & Audit Log</h4>
+            <p>Full traceability of asset lifecycle events</p>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

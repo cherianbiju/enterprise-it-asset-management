@@ -1,0 +1,481 @@
+<div class="list-wrapper">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">IT Asset Inventory</h1>
+      <p class="page-subtitle">Search, filter, allocate, and manage company devices</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/assets/new" class="btn btn-primary">
+        <span>➕</span> Register New Asset
+      </a>
+    </div>
+  </div>
+
+  <!-- Notification Alerts -->
+  <div *ngIf="successMessage" class="alert alert-success">
+    <span>✅</span> {{ successMessage }}
+  </div>
+  <div *ngIf="errorMessage" class="alert alert-error">
+    <span>⚠️</span> {{ errorMessage }}
+  </div>
+
+  <!-- Search & Filter Controls -->
+  <div class="card filter-card">
+    <div class="filter-grid">
+      <!-- Search Box -->
+      <div class="filter-item search-box">
+        <label for="searchInput">Search Asset</label>
+        <div class="input-with-icon">
+          <span class="search-icon">🔍</span>
+          <input
+            id="searchInput"
+            type="text"
+            placeholder="Search by code, name, or serial number..."
+            [(ngModel)]="searchTerm"
+            (keyup.enter)="onFilterChange()"
+          />
+        </div>
+      </div>
+
+      <!-- Status Filter -->
+      <div class="filter-item">
+        <label for="statusSelect">Filter by Status</label>
+        <select id="statusSelect" [(ngModel)]="selectedStatus" (change)="onFilterChange()">
+          <option value="">All Statuses</option>
+          <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+        </select>
+      </div>
+
+      <!-- Type Filter -->
+      <div class="filter-item">
+        <label for="typeSelect">Filter by Type</label>
+        <select id="typeSelect" [(ngModel)]="selectedType" (change)="onFilterChange()">
+          <option value="">All Types</option>
+          <option *ngFor="let t of assetTypes" [value]="t">{{ t }}</option>
+        </select>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="filter-actions">
+        <button class="btn btn-primary" (click)="onFilterChange()">Apply Filters</button>
+        <button class="btn btn-secondary" (click)="resetFilters()">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Assets Data Table -->
+  <div class="card table-card">
+    <div *ngIf="isLoading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Fetching asset records...</p>
+    </div>
+
+    <div *ngIf="!isLoading" class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Asset Code</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Serial Number</th>
+            <th>Status</th>
+            <th>Assigned To</th>
+            <th>Location</th>
+            <th>Purchase Date</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let asset of assets">
+            <!-- Code -->
+            <td>
+              <span class="code-badge">{{ asset.asset_code }}</span>
+            </td>
+
+            <!-- Name -->
+            <td>
+              <strong>{{ asset.asset_name }}</strong>
+            </td>
+
+            <!-- Type -->
+            <td>
+              <span class="type-pill">{{ asset.asset_type }}</span>
+            </td>
+
+            <!-- Serial Number -->
+            <td>
+              <code class="serial-tag">{{ asset.serial_number }}</code>
+            </td>
+
+            <!-- Status -->
+            <td>
+              <span class="badge" [ngClass]="getStatusBadgeClass(asset.status)">
+                {{ asset.status }}
+              </span>
+            </td>
+
+            <!-- Assigned To -->
+            <td>
+              <span *ngIf="asset.assigned_to" class="assignee-text">
+                👤 {{ asset.assigned_to }}
+              </span>
+              <span *ngIf="!asset.assigned_to" class="unassigned-text">—</span>
+            </td>
+
+            <!-- Location -->
+            <td class="location-cell" title="{{ asset.location }}">
+              📍 {{ asset.location }}
+            </td>
+
+            <!-- Purchase Date -->
+            <td>{{ asset.purchase_date }}</td>
+
+            <!-- Actions -->
+            <td class="action-buttons-cell">
+              <!-- Assign (Only AVAILABLE) -->
+              <button
+                *ngIf="asset.status === 'AVAILABLE'"
+                (click)="openAssignModal(asset)"
+                class="btn-action btn-action-assign"
+                title="Assign Asset to Employee"
+              >
+                Assign
+              </button>
+
+              <!-- Return (Only ASSIGNED) -->
+              <button
+                *ngIf="asset.status === 'ASSIGNED'"
+                (click)="openReturnModal(asset)"
+                class="btn-action btn-action-return"
+                title="Return Asset to Inventory"
+              >
+                Return
+              </button>
+
+              <!-- Repair (Not RETIRED or UNDER_REPAIR) -->
+              <button
+                *ngIf="asset.status !== 'RETIRED' && asset.status !== 'UNDER_REPAIR'"
+                (click)="openRepairModal(asset)"
+                class="btn-action btn-action-repair"
+                title="Mark for Repair"
+              >
+                Repair
+              </button>
+
+              <!-- Retire (Not RETIRED) -->
+              <button
+                *ngIf="asset.status !== 'RETIRED'"
+                (click)="openRetireModal(asset)"
+                class="btn-action btn-action-retire"
+                title="Decommission / Retire"
+              >
+                Retire
+              </button>
+
+              <!-- History -->
+              <button
+                (click)="openHistoryModal(asset)"
+                class="btn-action btn-action-history"
+                title="View Audit Trail"
+              >
+                History
+              </button>
+
+              <!-- Edit -->
+              <a
+                [routerLink]="['/assets/edit', asset.id]"
+                class="btn-action btn-action-edit"
+                title="Edit Asset"
+              >
+                Edit
+              </a>
+
+              <!-- Delete -->
+              <button
+                (click)="deleteAsset(asset)"
+                class="btn-action btn-action-delete"
+                title="Delete Asset"
+              >
+                Delete
+              </button>
+            </td>
+          </tr>
+
+          <!-- Empty State -->
+          <tr *ngIf="assets.length === 0">
+            <td colspan="9" class="empty-state">
+              <div class="empty-icon">📂</div>
+              <h3>No assets found</h3>
+              <p>Try adjusting your search criteria or register a new asset.</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Table Pagination -->
+    <div *ngIf="!isLoading && totalAssets > 0" class="pagination-bar">
+      <div class="pagination-info">
+        Showing <strong>{{ (currentPage - 1) * pageSize + 1 }}</strong> to
+        <strong>{{ (currentPage * pageSize) > totalAssets ? totalAssets : (currentPage * pageSize) }}</strong>
+        of <strong>{{ totalAssets }}</strong> assets
+      </div>
+
+      <div class="pagination-controls">
+        <label for="pageSizeSelect">Page Size:</label>
+        <select id="pageSizeSelect" [(ngModel)]="pageSize" (change)="onFilterChange()">
+          <option [ngValue]="5">5</option>
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="25">25</option>
+          <option [ngValue]="50">50</option>
+        </select>
+
+        <button
+          class="btn btn-secondary btn-sm"
+          [disabled]="currentPage <= 1"
+          (click)="loadAssets(currentPage - 1)"
+        >
+          Previous
+        </button>
+
+        <span class="page-number">Page {{ currentPage }} of {{ totalPages }}</span>
+
+        <button
+          class="btn btn-secondary btn-sm"
+          [disabled]="currentPage >= totalPages"
+          (click)="loadAssets(currentPage + 1)"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: ASSIGN ASSET -->
+  <!-- ========================================================================= -->
+  <div class="modal-backdrop" *ngIf="activeModal === 'ASSIGN'">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Assign Asset: {{ selectedAsset?.asset_code }}</h3>
+        <button class="close-x" (click)="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-subtitle">
+          Assigning <strong>{{ selectedAsset?.asset_name }}</strong> ({{ selectedAsset?.asset_type }})
+        </p>
+
+        <div class="form-group">
+          <label for="assigneeInput">Employee / Assignee Name *</label>
+          <input
+            id="assigneeInput"
+            type="text"
+            [(ngModel)]="assigneeName"
+            placeholder="e.g. Alice Johnson (Product Design)"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="assignLocation">Deployment Location</label>
+          <input
+            id="assignLocation"
+            type="text"
+            [(ngModel)]="actionLocation"
+            placeholder="e.g. San Francisco HQ - Desk 402"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="assignNotes">Assignment Notes</label>
+          <textarea
+            id="assignNotes"
+            rows="2"
+            [(ngModel)]="actionNotes"
+            placeholder="Special provisions, ticket number, accessories provided..."
+          ></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeModal()">Cancel</button>
+        <button class="btn btn-primary" [disabled]="!assigneeName.trim()" (click)="confirmAssign()">
+          Confirm Assignment
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: RETURN ASSET -->
+  <!-- ========================================================================= -->
+  <div class="modal-backdrop" *ngIf="activeModal === 'RETURN'">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Return Asset: {{ selectedAsset?.asset_code }}</h3>
+        <button class="close-x" (click)="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-subtitle">
+          Returning asset from <strong>{{ selectedAsset?.assigned_to }}</strong> into inventory.
+        </p>
+
+        <div class="form-group">
+          <label for="returnLocation">Return Storage Location *</label>
+          <input
+            id="returnLocation"
+            type="text"
+            [(ngModel)]="actionLocation"
+            placeholder="e.g. IT Storage Room B - Shelf 4"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="returnNotes">Return Notes / Device Condition</label>
+          <textarea
+            id="returnNotes"
+            rows="2"
+            [(ngModel)]="actionNotes"
+            placeholder="e.g. Employee offboarding, hardware inspected and cleaned."
+          ></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeModal()">Cancel</button>
+        <button class="btn btn-primary" (click)="confirmReturn()">
+          Confirm Return
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: REPAIR ASSET -->
+  <!-- ========================================================================= -->
+  <div class="modal-backdrop" *ngIf="activeModal === 'REPAIR'">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Send for Repair: {{ selectedAsset?.asset_code }}</h3>
+        <button class="close-x" (click)="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-subtitle">
+          Asset status will change to <strong>UNDER_REPAIR</strong>.
+        </p>
+
+        <div class="form-group">
+          <label for="repairLocation">Repair Vendor / Facility</label>
+          <input
+            id="repairLocation"
+            type="text"
+            [(ngModel)]="actionLocation"
+            placeholder="e.g. Apple Genius Bar / TechFix Support"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="repairNotes">Issue Diagnostic Notes</label>
+          <textarea
+            id="repairNotes"
+            rows="2"
+            [(ngModel)]="actionNotes"
+            placeholder="Describe malfunction, hardware damage, or warranty claim..."
+          ></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeModal()">Cancel</button>
+        <button class="btn btn-warning" (click)="confirmRepair()">
+          Initiate Repair
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: RETIRE ASSET -->
+  <!-- ========================================================================= -->
+  <div class="modal-backdrop" *ngIf="activeModal === 'RETIRE'">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Decommission Asset: {{ selectedAsset?.asset_code }}</h3>
+        <button class="close-x" (click)="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-subtitle text-danger">
+          ⚠️ Decommissioning permanently marks this asset as <strong>RETIRED</strong>.
+        </p>
+
+        <div class="form-group">
+          <label for="retireLocation">Disposal / Storage Location</label>
+          <input
+            id="retireLocation"
+            type="text"
+            [(ngModel)]="actionLocation"
+            placeholder="e.g. E-Waste Quarantine Vault"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="retireNotes">Reason for Retirement</label>
+          <textarea
+            id="retireNotes"
+            rows="2"
+            [(ngModel)]="actionNotes"
+            placeholder="e.g. End of 4-year lifecycle, mother-board fault."
+          ></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeModal()">Cancel</button>
+        <button class="btn btn-danger" (click)="confirmRetire()">
+          Confirm Retirement
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: AUDIT HISTORY DRAWER -->
+  <!-- ========================================================================= -->
+  <div class="modal-backdrop" *ngIf="activeModal === 'HISTORY'">
+    <div class="modal-card modal-card-lg">
+      <div class="modal-header">
+        <div>
+          <h3>Audit Trail: {{ selectedAsset?.asset_code }}</h3>
+          <p class="modal-subtitle">{{ selectedAsset?.asset_name }} (Serial: {{ selectedAsset?.serial_number }})</p>
+        </div>
+        <button class="close-x" (click)="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="isHistoryLoading" class="loading-state">
+          <div class="spinner"></div>
+          <p>Loading historical audit records...</p>
+        </div>
+
+        <div *ngIf="!isHistoryLoading" class="timeline-container">
+          <div *ngFor="let item of selectedAssetHistory" class="timeline-item">
+            <div class="timeline-marker"></div>
+            <div class="timeline-content">
+              <div class="timeline-header">
+                <span class="badge" [ngClass]="'badge-' + item.action.toLowerCase()">
+                  {{ item.action }}
+                </span>
+                <span class="timeline-time">{{ item.created_at | date:'medium' }}</span>
+              </div>
+              <p class="timeline-details">{{ item.details }}</p>
+              <div class="timeline-meta">Recorded by: <strong>{{ item.performed_by }}</strong></div>
+            </div>
+          </div>
+
+          <div *ngIf="selectedAssetHistory.length === 0" class="empty-state">
+            <p>No audit trail logs recorded yet for this asset.</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeModal()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

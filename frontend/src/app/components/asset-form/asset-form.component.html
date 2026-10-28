@@ -1,0 +1,170 @@
+<div class="form-wrapper">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">{{ isEditMode ? 'Edit Asset Profile' : 'Register New IT Asset' }}</h1>
+      <p class="page-subtitle">
+        {{ isEditMode ? 'Update asset attributes and physical location' : 'Enter hardware specifications and initial assignment state' }}
+      </p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/assets" class="btn btn-secondary">
+        ← Back to Inventory
+      </a>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading asset information...</p>
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="errorMessage" class="alert alert-error">
+    <span>⚠️</span>
+    <div class="alert-content">{{ errorMessage }}</div>
+  </div>
+
+  <!-- Form Card -->
+  <div *ngIf="!isLoading" class="card form-card">
+    <form (ngSubmit)="onSubmit()" #assetForm="ngForm">
+      <div class="form-sections">
+        <!-- Section 1: Identification -->
+        <div class="form-section">
+          <h3 class="section-title">Hardware Identification</h3>
+          <div class="form-grid">
+            <!-- Asset Code -->
+            <div class="form-group">
+              <label for="assetCode">Asset Code *</label>
+              <input
+                id="assetCode"
+                name="assetCode"
+                type="text"
+                [(ngModel)]="assetCode"
+                required
+                [disabled]="isEditMode"
+                placeholder="e.g. AST-1050"
+              />
+              <small class="helper-text" *ngIf="!isEditMode">Unique organizational tracking tag.</small>
+              <small class="helper-text" *ngIf="isEditMode">Asset codes cannot be changed once assigned.</small>
+            </div>
+
+            <!-- Serial Number -->
+            <div class="form-group">
+              <label for="serialNumber">Serial Number *</label>
+              <input
+                id="serialNumber"
+                name="serialNumber"
+                type="text"
+                [(ngModel)]="serialNumber"
+                required
+                [disabled]="isEditMode"
+                placeholder="e.g. C02G4567MD6R"
+              />
+              <small class="helper-text" *ngIf="!isEditMode">Manufacturer hardware serial key.</small>
+              <small class="helper-text" *ngIf="isEditMode">Manufacturer serial is immutable.</small>
+            </div>
+
+            <!-- Asset Name -->
+            <div class="form-group full-width">
+              <label for="assetName">Asset Name / Model *</label>
+              <input
+                id="assetName"
+                name="assetName"
+                type="text"
+                [(ngModel)]="assetName"
+                required
+                placeholder="e.g. MacBook Pro 16&quot; M3 Max (36GB RAM / 1TB SSD)"
+              />
+            </div>
+
+            <!-- Asset Type -->
+            <div class="form-group">
+              <label for="assetType">Device Category *</label>
+              <select id="assetType" name="assetType" [(ngModel)]="assetType" required>
+                <option *ngFor="let t of assetTypes" [value]="t">{{ t }}</option>
+              </select>
+            </div>
+
+            <!-- Purchase Date -->
+            <div class="form-group">
+              <label for="purchaseDate">Purchase Date *</label>
+              <input
+                id="purchaseDate"
+                name="purchaseDate"
+                type="date"
+                [(ngModel)]="purchaseDate"
+                required
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: Deployment & Location -->
+        <div class="form-section">
+          <h3 class="section-title">Deployment & Location</h3>
+          <div class="form-grid">
+            <!-- Location -->
+            <div class="form-group full-width">
+              <label for="location">Physical Location / Office *</label>
+              <input
+                id="location"
+                name="location"
+                type="text"
+                [(ngModel)]="location"
+                required
+                placeholder="e.g. San Francisco HQ - 4th Floor Pod B or Storage Room 2"
+              />
+            </div>
+
+            <!-- Initial Status (Create Mode Only) -->
+            <div class="form-group" *ngIf="!isEditMode">
+              <label for="status">Initial Status</label>
+              <select id="status" name="status" [(ngModel)]="status">
+                <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+              </select>
+              <small class="helper-text">Standard default is AVAILABLE.</small>
+            </div>
+
+            <!-- Assigned Employee (If Status is ASSIGNED in create mode) -->
+            <div class="form-group" *ngIf="!isEditMode && status === 'ASSIGNED'">
+              <label for="assignedTo">Assigned Employee *</label>
+              <input
+                id="assignedTo"
+                name="assignedTo"
+                type="text"
+                [(ngModel)]="assignedTo"
+                placeholder="e.g. Sarah Connor (Product Engineering)"
+                required
+              />
+            </div>
+
+            <!-- Current Status (Edit Mode Display Only) -->
+            <div class="form-group" *ngIf="isEditMode">
+              <label>Current Status</label>
+              <div class="readonly-badge-container">
+                <span class="badge" [ngClass]="'badge-' + status.toLowerCase()">{{ status }}</span>
+                <span *ngIf="assignedTo" class="assignee-note">Currently assigned to <strong>{{ assignedTo }}</strong></span>
+              </div>
+              <small class="helper-text">To reassign, return, or repair, use the action buttons on the inventory page.</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-footer">
+        <a routerLink="/assets" class="btn btn-secondary">Cancel</a>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="isSubmitting || !assetForm.form.valid"
+        >
+          <span *ngIf="isSubmitting" class="spinner-small"></span>
+          {{ isEditMode ? 'Update Asset' : 'Register Asset' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

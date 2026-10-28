@@ -1,0 +1,51 @@
+# ==============================================================================
+# Git Ignore Configuration - Enterprise IT Asset Management
+# ==============================================================================
+
+# Environment & Secrets (Keep .env.example, ignore private .env)
+.env
+*.env
+**/.env
+!**/.env.example
+
+# Node.js & Angular
+node_modules/
+frontend/node_modules/
+.angular/
+frontend/.angular/
+dist/
+frontend/dist/
+out-tsc/
+frontend/out-tsc/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Go Binaries & Build Artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+backend/main
+backend/server
+backend/bin/
+
+# Docker Local Data
+postgres_data/
+pgdata/
+
+# OS & Editor Files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.swo
